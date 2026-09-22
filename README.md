@@ -41,12 +41,42 @@ Test run on the sample: `uv run wildcam run --input sample --output output-sampl
 ## Re-running and resuming
 
 Each file's detections are cached in `cache/<model>_fps<fps>/`. The cache key
-is the original file's real path, and its size and modification time are
-checked on every run.
+is based on the file's content: its size plus a hash of the first and last
+64 KB. A file keeps its cached results and your labels even after it's moved
+or renamed.
 - Interrupting a run (Ctrl-C) is safe. The next `run` or `detect` skips
   everything that's already cached.
-- Adding new footage to the folder and running `run` processes only the new files.
 - `--redetect` forces all files to be processed again.
+
+## Adding new footage
+
+The footage folder is `input_dir`, and it's scanned recursively. Set your own
+path in `config.local.toml`, which isn't committed. Its values override
+`config.toml`:
+
+```toml
+input_dir = "~/path/to/WildlifeCamera"
+```
+
+Copy each SD card into its own dated folder:
+
+```
+WildlifeCamera/
+  2026-09-22/100MEDIA/DSCF0001.JPG ...
+  2026-10-05/100MEDIA/DSCF0001.JPG ...   <- new card, own folder
+```
+
+Then run `uv run wildcam run`. Only the new files are processed, and the
+species step labels them using your existing corrections.
+
+Don't copy a new card's `100MEDIA` into an existing one. Trail cameras
+restart their numbering, so Finder would replace older files with the same
+names. Moving or renaming existing footage is fine: the content-based cache
+key still recognises it.
+
+With Google Drive for desktop, first-time processing reads every file. Mark
+the folder "Available offline" in Drive if files are online-only, to avoid
+downloading them one at a time.
 
 ## Changing the threshold
 

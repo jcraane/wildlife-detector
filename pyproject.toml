@@ -3,7 +3,7 @@ name = "wildcam"
 version = "0.1.0"
 description = "Find animals, people and vehicles in trail camera footage with MegaDetector"
 authors = [
-    { name = "jamiecraane", email = "jcraane@gmail.com" }
+    { name = "jamiecraane" }
 ]
 requires-python = ">=3.12"
 dependencies = [

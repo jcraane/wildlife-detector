@@ -14,6 +14,7 @@ cache/
 output*/
 sample/
 labels.csv
+config.local.toml
 .playwright-mcp/
 *.log
 

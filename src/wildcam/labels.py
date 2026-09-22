@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 from pathlib import Path
 
 from .config import Config
+from .scan import content_key
 
 NO_ANIMAL = "no animal"
 
@@ -23,8 +23,8 @@ def load_labels(cfg: Config) -> dict[str, str]:
             if not label:
                 continue
             key = (row.get("key") or "").strip()
-            if not key and row.get("path"):
-                key = hashlib.sha1(str(Path(row["path"]).expanduser().resolve()).encode()).hexdigest()[:16]
+            if not key and row.get("path") and Path(row["path"]).expanduser().is_file():
+                key = content_key(Path(row["path"]).expanduser().resolve())
             if key:
                 labels[key] = label
     return labels

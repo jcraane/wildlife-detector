@@ -2,14 +2,15 @@
 # (see `uv run wildcam --help`).
 
 # Footage folder, scanned recursively. Opened read-only: nothing in it is ever
-# modified, moved or deleted.
-input_dir = "~/Downloads/camera"
+# modified, moved or deleted. Put your own path in config.local.toml (not in
+# git), which overrides any value in this file.
+input_dir = "~/WildlifeCamera"
 
 # Where results.csv/json, the sorted/ symlink view and report.html are written.
 output_dir = "output"
 
-# Per-file detection cache, shared by all runs. Keyed by the original file's
-# real path, so results from a sample run are reused by the full run.
+# Per-file detection cache, shared by all runs. Keyed by file content, so
+# moved or renamed footage keeps its results and labels.
 cache_dir = "cache"
 
 [detect]

@@ -166,7 +166,7 @@ const byKey = Object.fromEntries(items.map(i => [i.key, i]));
 const hasSpecies = items.some(i => i.species);
 
 // Your labels: the ones already in labels.csv, plus edits made here (kept in this browser until exported).
-const STORE = 'wildcam-labels:v1';
+const STORE = 'wildcam-labels:v2';  // v1 used path-based keys
 let local = {};
 try { local = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) {}
 const labels = {...manual, ...local};

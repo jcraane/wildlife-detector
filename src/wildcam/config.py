@@ -11,7 +11,7 @@ PROJECT_DIR = Path(__file__).resolve().parents[2]
 
 @dataclass
 class Config:
-    input_dir: Path = Path("~/Downloads/camera")
+    input_dir: Path = Path("footage")
     output_dir: Path = PROJECT_DIR / "output"
     cache_dir: Path = PROJECT_DIR / "cache"
     model: str = "MDV1000-REDWOOD"
@@ -51,11 +51,22 @@ def _resolve(path: str | Path) -> Path:
     return p if p.is_absolute() else PROJECT_DIR / p
 
 
+def _merge(base: dict, override: dict) -> dict:
+    out = dict(base)
+    for k, v in override.items():
+        out[k] = _merge(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+    return out
+
+
 def load_config(path: Path | None = None) -> Config:
+    """Reads config.toml, then config.local.toml next to it (untracked, for personal paths)."""
     cfg = Config()
     path = path or PROJECT_DIR / "config.toml"
-    if path.exists():
-        data = tomllib.loads(path.read_text())
+    local = path.with_name(f"{path.stem}.local.toml")
+    if path.exists() or local.exists():
+        data = tomllib.loads(path.read_text()) if path.exists() else {}
+        if local.exists():
+            data = _merge(data, tomllib.loads(local.read_text()))
         detect = data.get("detect", {})
         aggregate = data.get("aggregate", {})
         species = data.get("species", {})
