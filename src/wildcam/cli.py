@@ -83,7 +83,7 @@ def cmd_species(cfg, args) -> None:
     from .aggregate import aggregate
     from .scan import scan
     from .species import run_species
-    run_species(cfg, aggregate(cfg, scan(cfg)))
+    run_species(cfg, aggregate(cfg, scan(cfg), with_species=False))
 
 
 def cmd_aggregate(cfg, args) -> None:
@@ -127,7 +127,7 @@ def main() -> None:
     p.add_argument("--redetect", action="store_true", help="ignore the cache and process every file again")
     p.set_defaults(func=cmd_detect)
 
-    p = sub.add_parser("species", help="run SpeciesNet on animal hits")
+    p = sub.add_parser("species", help="label animal hits with BioCLIP-2 (labels in config.toml)")
     _add_common(p)
     p.set_defaults(func=cmd_species)
 
@@ -139,7 +139,7 @@ def main() -> None:
     _add_common(p)
     p.add_argument("--redetect", action="store_true", help="ignore the cache and process every file again")
     p.add_argument("--species", action=argparse.BooleanOptionalAction, default=None,
-                   help="enable/disable SpeciesNet (overrides [species] enabled)")
+                   help="enable/disable the species step (overrides [species] enabled)")
     p.set_defaults(func=cmd_run)
 
     args = parser.parse_args()

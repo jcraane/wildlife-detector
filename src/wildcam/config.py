@@ -22,7 +22,10 @@ class Config:
     threshold: float = 0.2
     category_thresholds: dict[str, float] = field(default_factory=dict)
     species_enabled: bool = False
-    country: str = "NLD"
+    species_model: str = "hf-hub:imageomics/bioclip-2"
+    species_labels: dict[str, list[str]] = field(default_factory=dict)
+    labels_file: Path = PROJECT_DIR / "labels.csv"
+    zero_shot_min: float = 0.9
     image_exts: frozenset[str] = field(
         default_factory=lambda: frozenset({".jpg", ".jpeg", ".png", ".tif", ".tiff"}))
     video_exts: frozenset[str] = field(
@@ -39,7 +42,8 @@ class Config:
 
     @property
     def species_dir(self) -> Path:
-        return self.cache_dir / "speciesnet"
+        slug = self.species_model.rsplit("/", 1)[-1].replace(":", "_")
+        return self.cache_dir / f"species_{slug}"
 
 
 def _resolve(path: str | Path) -> Path:
@@ -66,8 +70,13 @@ def load_config(path: Path | None = None) -> Config:
         cfg.threshold = float(aggregate.get("threshold", cfg.threshold))
         cfg.category_thresholds = {k: float(v) for k, v in aggregate.get("category_thresholds", {}).items()}
         cfg.species_enabled = bool(species.get("enabled", cfg.species_enabled))
-        cfg.country = species.get("country", cfg.country)
+        cfg.species_model = species.get("model", cfg.species_model)
+        cfg.labels_file = Path(species.get("labels_file", cfg.labels_file))
+        cfg.zero_shot_min = float(species.get("zero_shot_min", cfg.zero_shot_min))
+        cfg.species_labels = {name: [prompts] if isinstance(prompts, str) else list(prompts)
+                              for name, prompts in species.get("labels", {}).items()}
     cfg.input_dir = _resolve(cfg.input_dir)
     cfg.output_dir = _resolve(cfg.output_dir)
     cfg.cache_dir = _resolve(cfg.cache_dir)
+    cfg.labels_file = _resolve(cfg.labels_file)
     return cfg

@@ -38,7 +38,44 @@ person = 0.7
 vehicle = 0.8
 
 [species]
-# Run SpeciesNet on animal hits (separate uv environment in ./species).
-enabled = false
-# ISO 3166-1 alpha-3 country code for SpeciesNet geofencing; "" disables it.
-country = "NLD"
+# Label every animal hit with BioCLIP-2 (zero-shot): each MegaDetector animal
+# box on the best frame is compared against the labels below and gets the
+# best-matching one. Only these labels can be returned, so list what can
+# plausibly visit the camera. There is no reliable "no animal" label: BioCLIP-2
+# rates any species name above generic background prompts, so MegaDetector
+# false positives get the closest species. Mouse and rat species can't be told
+# apart reliably on night footage, so there is a single "house mouse" label.
+enabled = true
+model = "hf-hub:imageomics/bioclip-2"
+
+# Your corrections, exported from the report ("Export labels"). With examples
+# for two or more labels, a classifier is trained on them and predicts the
+# labelled classes (including ones not listed below, such as "no animal" or
+# "rabbit on lens"). A file labelled "no animal" stops counting as an animal hit.
+labels_file = "labels.csv"
+# A zero-shot label that has no examples yet is still used when it scores at
+# least this high (so a rare visitor is not forced into a trained class).
+zero_shot_min = 0.9
+
+# label = text prompt(s). BioCLIP-2 works best with "scientific name, common
+# name". A list of prompts is averaged. Changing labels only needs
+# `uv run wildcam species` again: crops are cached, re-scoring takes seconds.
+[species.labels]
+"domestic rabbit" = [
+    "Oryctolagus cuniculus domesticus, domestic rabbit",
+    "Oryctolagus cuniculus domesticus, black and white Dutch rabbit",
+    "Oryctolagus cuniculus domesticus, close-up of domestic rabbit fur",
+]
+"house mouse" = "Mus musculus, house mouse"
+"domestic cat" = "Felis catus, domestic cat"
+"red squirrel" = "Sciurus vulgaris, red squirrel"
+"hedgehog" = "Erinaceus europaeus, European hedgehog"
+"red fox" = "Vulpes vulpes, red fox"
+"stone marten" = "Martes foina, stone marten"
+"European robin" = "Erithacus rubecula, European robin"
+"Eurasian blackbird" = "Turdus merula, Eurasian blackbird"
+"house sparrow" = "Passer domesticus, house sparrow"
+"great tit" = "Parus major, great tit"
+"wood pigeon" = "Columba palumbus, common wood pigeon"
+"Eurasian magpie" = "Pica pica, Eurasian magpie"
+"human" = "Homo sapiens, human"

@@ -5,7 +5,7 @@ vehicle, and skips the empty triggers (wind, grass, light changes).
 
 - Detector: [MegaDetector](https://github.com/agentmorris/MegaDetector) v1000-redwood,
   via the `megadetector` package. Upstream recommends it as the most accurate model.
-- Optional species labels: Google's [SpeciesNet](https://github.com/google/cameratrapai).
+- Optional species labels: [BioCLIP-2](https://huggingface.co/imageomics/bioclip-2) with a list of local species.
 - Runs on the Apple GPU (MPS) when available, otherwise CUDA or CPU.
 - The footage folder is only ever read. The sorted view uses symlinks.
 
@@ -32,7 +32,7 @@ Outputs in `output/`:
 | `uv run wildcam sample -n 20` | symlinks a random mix of files into `./sample` for a test run |
 | `uv run wildcam detect` | runs MegaDetector on new or changed files only |
 | `uv run wildcam aggregate` | re-applies thresholds and rewrites CSV, JSON, `sorted/` and report (seconds, no model) |
-| `uv run wildcam species` | SpeciesNet on the current animal hits |
+| `uv run wildcam species` | BioCLIP-2 species labels for the current animal hits |
 | `uv run wildcam run` | `detect`, then `species` if enabled, then `aggregate` |
 
 Common flags: `--input DIR`, `--output DIR`, `--threshold X`, `--fps X`.
@@ -72,24 +72,74 @@ Changing `fps` in `[detect]` uses a separate cache folder, so it needs one detec
 
 ## Species classification (optional)
 
-SpeciesNet runs in its own uv environment in `species/`. Its dependencies
-(onnx/protobuf) conflict with the `megadetector` package, so the two can't
-share one environment. `uv` sets it up automatically the first time it's used.
+Animal hits can be labelled with [BioCLIP-2](https://huggingface.co/imageomics/bioclip-2)
+(MIT license), a species model that picks the best match from the list of
+labels you give it. Each MegaDetector animal box on a hit's best frame is
+cropped from the full-resolution image and scored against the labels in
+`config.toml`:
 
-Turn it on with either:
+```toml
+[species]
+enabled = true
 
-```sh
-uv run wildcam run --species        # one-off
+[species.labels]
+"domestic rabbit" = "Oryctolagus cuniculus domesticus, domestic rabbit"
+"red squirrel" = "Sciurus vulgaris, red squirrel"
+# ...
 ```
 
-or `enabled = true` under `[species]` in `config.toml`. Set `country` there
-(ISO 3166-1 alpha-3, e.g. `NLD`) so predictions are limited to species that
-occur in that country. An empty value turns this off.
+Run it with `uv run wildcam run --species`, or on its own with
+`uv run wildcam species`, then `uv run wildcam aggregate`. The first run
+downloads the model (~1.7 GB). Crop embeddings are cached in
+`cache/species_bioclip-2/`, so after editing the labels a re-run only
+re-scores and takes seconds. Results appear in the CSV (`species`,
+`species_score`, and `species_all` for every animal box on the best frame)
+and as a species filter in the report.
 
-SpeciesNet classifies the best frame of every animal hit. For videos, that
-frame is re-extracted at full resolution. Predictions are cached in
-`cache/speciesnet/` and later runs only classify new hits. The species and its
-score appear in the CSV and the report.
+Why not SpeciesNet: it was tried first. On this camera it labelled the pet
+rabbits as cat or dog and the rodents as American species, because it can
+answer with any of its ~2,000 classes. BioCLIP-2 with a short local list was
+far more accurate on the same sample.
+
+### Improving the labels with your own corrections
+
+Zero-shot labels are rough: black-and-white pet rabbits, for example, often
+come out as "domestic cat". Correcting a few cards teaches the pipeline what
+the animals at your camera look like:
+
+1. In `output/report.html`, sort by **Species score, lowest first**. Type the
+   right label in a card's label box, or press **✓** to accept the prediction.
+   Any label works, including ones that aren't in `config.toml`, such as
+   `no animal` or `rabbit on lens`. Edits are kept in your browser until
+   you export them.
+2. Click **Export labels**. Your browser saves `labels.csv`.
+3. Move it into the project and re-run:
+
+   ```sh
+   mv ~/Downloads/labels.csv .
+   uv run wildcam species && uv run wildcam aggregate
+   ```
+
+With examples for two or more labels, a logistic regression is trained on
+the cached crop embeddings of your labelled files. It then labels all the
+other hits, which takes seconds, and prints a cross-validated accuracy once
+every label has at least two examples. Your own label always wins for its
+file. A zero-shot label you have no examples of yet is kept when it scores at
+least `zero_shot_min` (0.9), so a rare visitor still shows up. A file
+labelled `no animal`, or predicted as it, moves to `empty`.
+
+About 10–20 examples for each common case and a few for each rare animal is
+a good start. Repeat steps 1–3 as needed: the report loads your existing
+labels, and each export contains all of them. `labels.csv` is in
+`.gitignore`, because it contains paths to your footage.
+
+Limits:
+- Without examples, only the listed labels can be returned. Add an animal to the list if it
+  visits and isn't there.
+- Zero-shot has no working "no animal" label, so MegaDetector false
+  positives get the closest species until you label a few as `no animal`.
+- Mouse and rat species aren't reliably told apart on night footage; read
+  those labels as "rodent".
 
 ## Notes on this camera (SILTCON trail camera)
 

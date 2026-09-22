@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .config import Config
 from .detect import read_cache
+from .labels import NO_ANIMAL
 from .scan import MediaFile
 
 CATEGORIES = ("animal", "person", "vehicle")
@@ -18,7 +19,7 @@ CSV_COLUMNS = [
     "path", "original_path", "type", "category", "categories", "max_conf",
     "animal_conf", "person_conf", "vehicle_conf", "best_frame_time_s",
     "hit_frames", "sampled_frames", "capture_time", "capture_time_source",
-    "duration_s", "width", "height", "species", "species_score", "error",
+    "duration_s", "width", "height", "species", "species_score", "species_source", "species_all", "error",
 ]
 
 
@@ -55,6 +56,13 @@ def summarize(media: MediaFile, rec: dict | None, cfg: Config, species: dict) ->
                 best_conf, best_frame, best_qualifies = d["conf"], frame, ok
 
     hit_cats = sorted((c for c in per_cat if per_cat[c] >= cfg.threshold_for(c)), key=lambda c: -per_cat[c])
+    sp = species.get(media.key)
+    if sp and "animal" in hit_cats and sp["t"] == best_frame["t"]:
+        row["species"], row["species_score"] = sp["label"], sp["score"]
+        row["species_source"] = sp.get("source")
+        row["species_all"] = ";".join(dict.fromkeys(b["label"] for b in sp["boxes"] if b["label"] != NO_ANIMAL))
+        if sp["label"] == NO_ANIMAL:
+            hit_cats.remove("animal")
     row.update(
         category=hit_cats[0] if hit_cats else "empty",
         categories=";".join(hit_cats),
@@ -63,9 +71,6 @@ def summarize(media: MediaFile, rec: dict | None, cfg: Config, species: dict) ->
         best_frame_time_s=best_frame["t"] if media.kind == "video" else None,
         hit_frames=hit_frames,
     )
-    sp = species.get(media.key)
-    if sp and "animal" in hit_cats:
-        row["species"], row["species_score"] = sp["label"], sp["score"]
     # Kept for the report, not written to the CSV.
     row["_key"] = media.key
     row["_best_frame_file"] = rec.get("best_frame")
@@ -78,8 +83,8 @@ def load_species(cfg: Config) -> dict:
     return json.loads(path.read_text()) if path.exists() else {}
 
 
-def aggregate(cfg: Config, files: list[MediaFile]) -> list[dict]:
-    species = load_species(cfg)
+def aggregate(cfg: Config, files: list[MediaFile], with_species: bool = True) -> list[dict]:
+    species = load_species(cfg) if with_species else {}
     rows = [summarize(m, read_cache(cfg, m), cfg, species) for m in files]
     rows.sort(key=lambda r: (r["category"] in ("empty", "error", "not_processed"), -(r["max_conf"] or 0)))
     return rows
