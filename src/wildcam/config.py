@@ -14,6 +14,7 @@ class Config:
     input_dir: Path = Path("footage")
     output_dir: Path = PROJECT_DIR / "output"
     cache_dir: Path = PROJECT_DIR / "cache"
+    publish_dir: Path | None = None
     model: str = "MDV1000-REDWOOD"
     fps: float = 1.0
     frame_width: int = 1920
@@ -73,6 +74,8 @@ def load_config(path: Path | None = None) -> Config:
         cfg.input_dir = Path(data.get("input_dir", cfg.input_dir))
         cfg.output_dir = Path(data.get("output_dir", cfg.output_dir))
         cfg.cache_dir = Path(data.get("cache_dir", cfg.cache_dir))
+        if data.get("publish_dir"):
+            cfg.publish_dir = _resolve(data["publish_dir"])
         cfg.model = detect.get("model", cfg.model)
         cfg.fps = float(detect.get("fps", cfg.fps))
         cfg.frame_width = int(detect.get("frame_width", cfg.frame_width))

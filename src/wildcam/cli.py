@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import os
 import random
+import shutil
 import statistics
 from collections import Counter
 from pathlib import Path
@@ -98,6 +100,21 @@ def cmd_aggregate(cfg, args) -> None:
     overrides = "".join(f", {k} {v}" for k, v in cfg.category_thresholds.items())
     print(f"Threshold {cfg.threshold}{overrides}: " + ", ".join(f"{k} {v}" for k, v in counts.most_common()))
     print(f"  {cfg.output_dir / 'results.csv'}\n  {cfg.output_dir / 'sorted'}/\n  {report}")
+    if cfg.publish_dir:
+        publish(cfg)
+
+
+def publish(cfg) -> None:
+    """Copies the report and tables to publish_dir (never the sorted/ symlinks)."""
+    dest = cfg.publish_dir
+    if dest.resolve().is_relative_to(cfg.input_dir.resolve()):
+        raise SystemExit(f"publish_dir {dest} is inside the footage folder, which is read-only.")
+    dest.mkdir(parents=True, exist_ok=True)
+    for name in ("report.html", "results.csv", "results.json"):
+        tmp = dest / f".{name}.tmp"
+        shutil.copyfile(cfg.output_dir / name, tmp)
+        os.replace(tmp, dest / name)  # a sync client never sees a half-written file
+    print(f"Published report and results to {dest}")
 
 
 def cmd_run(cfg, args) -> None:

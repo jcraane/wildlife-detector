@@ -9,6 +9,11 @@ input_dir = "~/WildlifeCamera"
 # Where results.csv/json, the sorted/ symlink view and report.html are written.
 output_dir = "output"
 
+# Optional: after every aggregate, copy report.html, results.csv and
+# results.json here (e.g. a synced Google Drive folder). Must be outside
+# input_dir. The sorted/ symlink view is not copied.
+# publish_dir = "~/path/to/WildlifeCamera Report"
+
 # Per-file detection cache, shared by all runs. Keyed by file content, so
 # moved or renamed footage keeps its results and labels.
 cache_dir = "cache"

@@ -24,6 +24,13 @@ Outputs in `output/`:
 | `sorted/{animal,person,vehicle,empty,error}/` | symlinks to the originals, named `<capture time>_<folder>_<file>` |
 | `report.html` | self-contained report: best frame per hit with boxes, sortable, filterable by category and confidence; click a card to open the original |
 
+To keep a copy of the report somewhere else, such as a synced Google Drive
+folder, set `publish_dir` in `config.local.toml`. After every `aggregate` or
+`run`, `report.html`, `results.csv` and `results.json` are copied there. The
+`sorted/` links are not copied. The folder must be outside the footage folder.
+Links in the report open the original files only on the machine that ran the
+pipeline.
+
 ## Commands
 
 | Command | Does |
