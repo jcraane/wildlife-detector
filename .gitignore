@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Pipeline data (never commit footage-derived output)
+cache/
+output*/
+sample/
+.playwright-mcp/
+*.log
+
+# OS / IDE
+.DS_Store
+.idea/
+*.iml

@@ -1,0 +1,44 @@
+# wildcam configuration. Every value can be overridden on the command line
+# (see `uv run wildcam --help`).
+
+# Footage folder, scanned recursively. Opened read-only: nothing in it is ever
+# modified, moved or deleted.
+input_dir = "~/Downloads/camera"
+
+# Where results.csv/json, the sorted/ symlink view and report.html are written.
+output_dir = "output"
+
+# Per-file detection cache, shared by all runs. Keyed by the original file's
+# real path, so results from a sample run are reused by the full run.
+cache_dir = "cache"
+
+[detect]
+# MegaDetector model name as understood by the `megadetector` package.
+model = "MDV1000-REDWOOD"
+# Frames sampled per second of video.
+fps = 1.0
+# Sampled frames are scaled to this width before detection. MegaDetector
+# resizes to 1280 px internally, so 1920 loses no detection accuracy.
+frame_width = 1920
+# Detections at or above this confidence are cached. Thresholds below this
+# value need a re-run of detection (`--redetect`).
+min_cached_conf = 0.01
+# Parallel file loaders (ffmpeg decoding / JPEG decoding) feeding the GPU.
+workers = 4
+
+[aggregate]
+# A file is a hit when any detection in any frame reaches this confidence.
+threshold = 0.2
+
+# Per-category overrides of `threshold`. People and vehicles are not expected
+# at these locations (except the owner servicing the camera), and close-up
+# rabbits score up to ~0.6 as "person", so these are stricter.
+[aggregate.category_thresholds]
+person = 0.7
+vehicle = 0.8
+
+[species]
+# Run SpeciesNet on animal hits (separate uv environment in ./species).
+enabled = false
+# ISO 3166-1 alpha-3 country code for SpeciesNet geofencing; "" disables it.
+country = "NLD"
