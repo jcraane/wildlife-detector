@@ -152,7 +152,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 16px; display: grid; gap: 14p
   <label class="ctl">Min confidence <input type="range" id="minConf" min="0" max="1" step="0.01"><span id="minConfVal"></span></label>
   <label class="ctl" id="speciesCtl" hidden>Species <select id="species"><option value="">All</option></select></label>
   <label class="ctl" id="shownCtl" hidden>Show <select id="shown"><option value="">All</option><option value="unlabelled">Not labelled by me</option><option value="labelled">Labelled by me</option></select></label>
-  <label class="ctl">Sort <select id="sort"><option value="conf">Confidence</option><option value="time">Capture time</option><option value="speciesScore">Species score, lowest first</option></select></label>
+  <label class="ctl">Sort <select id="sort"><option value="conf">Confidence</option><option value="timeDesc">Capture time, newest first</option><option value="time">Capture time, oldest first</option><option value="speciesScore">Species score, lowest first</option></select></label>
   <input type="search" id="q" placeholder="Filter by file or species">
   <button class="chip" id="export" hidden>Export labels</button>
 </div></div>
@@ -272,6 +272,7 @@ function render() {
   const sorts = {
     conf: (a, b) => b.conf - a.conf,
     time: (a, b) => (a.when || '').localeCompare(b.when || ''),
+    timeDesc: (a, b) => (b.when || '').localeCompare(a.when || ''),
     speciesScore: (a, b) => (a.speciesScore ?? 2) - (b.speciesScore ?? 2),
   };
   list.sort(sorts[state.sort]);
